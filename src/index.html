@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>フォルダ構成図メーカー</title>
+<style>
+body { font-family: Consolas, monospace; margin: 10px; transition: background-color 0.3s,color 0.3s; }
+button { padding:5px 10px; margin-right:5px; }
+#tree { border:1px solid #ccc; padding:10px; height:400px; overflow:auto; margin-top:10px; }
+ul { list-style-type:none; padding-left:1em; }
+summary { cursor:pointer; }
+
+body.dark { background:#1e1e1e; color:#ddd; }
+body.dark #tree { border-color:#555; }
+body.dark button, body.dark select { background:#333; color:#ddd; border:1px solid #555; }
+body.light { background:#fff; color:#000; }
+body.light #tree { border-color:#ccc; }
+body.light button, body.light select { background:#eee; color:#000; border:1px solid #ccc; }
+
+#toast {
+  position: fixed; bottom: 20px; right: 20px;
+  padding: 10px 15px; background:#333; color:#fff;
+  border-radius:5px; opacity:0; transition:opacity 0.3s;
+}
+</style>
+</head>
+<body>
+  <button id="selectBtn">フォルダを選択</button>
+  <button id="copyBtn">Markdownコピー</button>
+  <button id="saveBtn">保存</button>
+  <button id="themeBtn">モード切替</button>
+  <label for="langSelect">言語:</label>
+  <select id="langSelect">
+    <option value="auto">Auto</option>
+    <option value="ja">日本語</option>
+    <option value="en">English</option>
+    <option value="zh-CN">简体中文</option>
+    <option value="zh-TW">繁體中文</option>
+    <option value="ko">한국어</option>
+    <option value="es">Español</option>
+    <option value="fr">Français</option>
+    <option value="de">Deutsch</option>
+  </select>
+
+  <div id="tree"></div>
+  <div id="toast"></div>
+<script src="renderer.js"></script>
+</body>
+</html>
