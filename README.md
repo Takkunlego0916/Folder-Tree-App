@@ -4,6 +4,8 @@ Folder Tree App は、フォルダ構造を可視化して整理するWindows用
 
 ## Features
 - フォルダツリーの表示
+- ダーク、ライトモード切り替え
+- 言語切り替え（日本語、English、简体中文、繁體中文、한국어、Español、Français、Deutsch）
 
 ## Installation
 1. [Releases](https://github.com/Takkunlego0916/Folder-Tree-App/releases) から最新版のインストーラーをダウンロード
