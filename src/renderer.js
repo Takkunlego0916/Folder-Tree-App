@@ -162,6 +162,12 @@ window.addEventListener('drop', async (e) => {
   e.preventDefault();
   if (e.dataTransfer.files.length === 0) return;
 
-  const folderPath = e.dataTransfer.files[0].path;
-  loadFolder(folderPath);
+  const rawPath = e.dataTransfer.files[0].path;
+
+  const validatedPath = await api.validateDropPath(rawPath);
+  if (validatedPath) {
+    loadFolder(validatedPath);
+  } else {
+    showToast('有効なフォルダではありません');
+  }
 });
