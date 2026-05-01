@@ -4,6 +4,9 @@ const fs = require('fs/promises');
 
 const MAX_DEPTH = 4;
 const MAX_CHILDREN_PER_DIR = 1000;
+const MAX_CONTENT_BYTES = 10 * 1024 * 1024;
+
+const trustedPaths = new Set();
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -19,7 +22,6 @@ function createWindow() {
   });
 
   win.loadFile('index.html');
-
   win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   win.webContents.on('will-navigate', (event) => event.preventDefault());
 }
@@ -46,6 +48,14 @@ async function normalizeFolderPath(folderPath) {
     throw new Error('指定されたパスが不正です');
   }
 
+  if (folderPath.includes('\0')) {
+    throw new Error('パスに不正な文字が含まれています');
+  }
+
+  if (folderPath.length > 32767) {
+    throw new Error('パスが長すぎます');
+  }
+
   const resolved = path.resolve(folderPath);
   const stat = await fs.stat(resolved);
 
@@ -54,6 +64,15 @@ async function normalizeFolderPath(folderPath) {
   }
 
   return resolved;
+}
+
+function isPathTrusted(resolvedPath) {
+  for (const trusted of trustedPaths) {
+    if (resolvedPath === trusted || resolvedPath.startsWith(trusted + path.sep)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 async function buildTreeNode(dirPath, depth = 0) {
@@ -82,19 +101,14 @@ async function buildTreeNode(dirPath, depth = 0) {
   for (const entry of limited) {
     const fullPath = path.join(dirPath, entry.name);
 
-    if (entry.isSymbolicLink()) {
-      continue;
-    }
+    if (entry.isSymbolicLink()) continue;
 
     if (entry.isDirectory()) {
       const child = await buildTreeNode(fullPath, depth + 1);
       child.name = entry.name;
       node.children.push(child);
     } else {
-      node.children.push({
-        name: entry.name,
-        type: 'file'
-      });
+      node.children.push({ name: entry.name, type: 'file' });
     }
   }
 
@@ -136,18 +150,35 @@ function treeToText(node) {
 ipcMain.handle('select-folder', async (event) => {
   ensureTrustedSender(event);
 
-  const result = await dialog.showOpenDialog({
-    properties: ['openDirectory']
-  });
-
+  const result = await dialog.showOpenDialog({ properties: ['openDirectory'] });
   if (result.canceled || result.filePaths.length === 0) return null;
-  return result.filePaths[0];
+
+  const folderPath = result.filePaths[0];
+  trustedPaths.add(path.resolve(folderPath));
+  return folderPath;
+});
+
+ipcMain.handle('validate-drop-path', async (event, folderPath) => {
+  ensureTrustedSender(event);
+
+  try {
+    const resolved = await normalizeFolderPath(folderPath);
+    trustedPaths.add(resolved);
+    return resolved;
+  } catch {
+    return null;
+  }
 });
 
 ipcMain.handle('read-folder', async (event, folderPath) => {
   ensureTrustedSender(event);
 
   const resolved = await normalizeFolderPath(folderPath);
+
+  if (!isPathTrusted(resolved)) {
+    throw new Error('このフォルダへのアクセスは許可されていません');
+  }
+
   const treeData = await buildTreeNode(resolved);
   const textTree = treeToText(treeData);
 
@@ -159,6 +190,10 @@ ipcMain.handle('save-file', async (event, content) => {
 
   if (typeof content !== 'string') {
     throw new Error('保存内容が不正です');
+  }
+
+  if (Buffer.byteLength(content, 'utf8') > MAX_CONTENT_BYTES) {
+    throw new Error('保存するコンテンツが大きすぎます');
   }
 
   const { filePath } = await dialog.showSaveDialog({
@@ -176,9 +211,11 @@ ipcMain.handle('save-file', async (event, content) => {
 ipcMain.on('copy-to-clipboard', (event, text) => {
   ensureTrustedSender(event);
 
-  if (typeof text === 'string') {
-    clipboard.writeText(text);
-  }
+  if (typeof text !== 'string') return;
+
+  if (Buffer.byteLength(text, 'utf8') > MAX_CONTENT_BYTES) return;
+
+  clipboard.writeText(text);
 });
 
 ipcMain.handle('get-theme', () => {
