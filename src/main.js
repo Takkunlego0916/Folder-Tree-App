@@ -4,7 +4,7 @@ const fs = require('fs/promises');
 
 const MAX_DEPTH_LIMIT = 8;
 const MAX_CHILDREN_PER_DIR = 1000;
-const MAX_CONTENT_BYTES = 10 * 1024 * 1024; // 10MB
+const MAX_CONTENT_BYTES = 10 * 1024 * 1024;
 
 const trustedPaths = new Set();
 
@@ -34,7 +34,7 @@ app.on('window-all-closed', () => {
 });
 
 function ensureTrustedSender(event) {
-  const url = event?.senderFrame?.url || '';
+  const url = event?.senderFrame?.url ?? '';
   if (!url.startsWith('file://')) throw new Error('不正な送信元です');
 }
 
@@ -43,7 +43,7 @@ async function normalizeFolderPath(folderPath) {
     throw new Error('指定されたパスが不正です');
   }
   if (folderPath.includes('\0')) throw new Error('パスに不正な文字が含まれています');
-  if (folderPath.length > 32767)  throw new Error('パスが長すぎます');
+  if (folderPath.length > 32767) throw new Error('パスが長すぎます');
 
   const resolved = path.resolve(folderPath);
   const stat = await fs.stat(resolved);
@@ -58,9 +58,9 @@ function isPathTrusted(resolvedPath) {
   return false;
 }
 
-
 async function buildTreeNode(dirPath, depth = 0, options = {}) {
   const { maxDepth = 4, excludes = [] } = options;
+  const excludesLower = excludes.map(e => e.toLowerCase());
 
   const node = { name: dirPath, type: 'directory', children: [] };
 
@@ -82,7 +82,7 @@ async function buildTreeNode(dirPath, depth = 0, options = {}) {
   const limited = dirents.slice(0, MAX_CHILDREN_PER_DIR);
   for (const entry of limited) {
     if (entry.isSymbolicLink()) continue;
-    if (excludes.includes(entry.name)) continue;
+    if (excludesLower.includes(entry.name.toLowerCase())) continue;
 
     const fullPath = path.join(dirPath, entry.name);
     if (entry.isDirectory()) {
@@ -102,7 +102,6 @@ async function buildTreeNode(dirPath, depth = 0, options = {}) {
   }
   return node;
 }
-
 
 function treeToText(node) {
   const lines = [`${node.name}/`];
@@ -127,7 +126,6 @@ function treeToText(node) {
   walk(node.children || []);
   return lines.join('\n');
 }
-
 
 ipcMain.handle('select-folder', async (event) => {
   ensureTrustedSender(event);
@@ -198,11 +196,12 @@ ipcMain.handle('save-file', async (event, content, format = 'txt') => {
   return true;
 });
 
-ipcMain.on('copy-to-clipboard', (event, text) => {
+ipcMain.handle('copy-to-clipboard', async (event, text) => {
   ensureTrustedSender(event);
-  if (typeof text !== 'string') return;
-  if (Buffer.byteLength(text, 'utf8') > MAX_CONTENT_BYTES) return;
+  if (typeof text !== 'string') return false;
+  if (Buffer.byteLength(text, 'utf8') > MAX_CONTENT_BYTES) return false;
   clipboard.writeText(text);
+  return true;
 });
 
 ipcMain.handle('get-theme', () =>
