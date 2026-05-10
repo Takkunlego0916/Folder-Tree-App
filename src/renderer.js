@@ -19,6 +19,7 @@ let currentFolderPath = null;
 let theme = 'auto';
 let lang  = 'auto';
 let reloadTimeout = null;
+let loadRequestId = 0;
 
 const LANG_DICT = {
   selectFolder:      { ja:'フォルダを選択', en:'Select Folder',  'zh-CN':'选择文件夹',  'zh-TW':'選擇資料夾', ko:'폴더 선택',  es:'Seleccionar', fr:'Sélectionner', de:'Ordner wählen' },
@@ -33,7 +34,6 @@ const LANG_DICT = {
   saveSuccess:       { ja:'保存しました！',   en:'Saved!',         'zh-CN':'已保存！',     'zh-TW':'已保存！',   ko:'저장 완료!', es:'¡Guardado!',  fr:'Enregistré !', de:'Gespeichert!'  }
 };
 
-
 function showToast(message) {
   toastEl.textContent = message;
   toastEl.style.opacity = '1';
@@ -42,13 +42,13 @@ function showToast(message) {
 
 function detectLang() {
   const nav = navigator.language.toLowerCase();
-  if (nav.startsWith('ja'))                          return 'ja';
-  if (nav.startsWith('zh-cn'))                       return 'zh-CN';
+  if (nav.startsWith('ja'))                                return 'ja';
+  if (nav.startsWith('zh-cn'))                             return 'zh-CN';
   if (nav.startsWith('zh-tw') || nav.startsWith('zh-hk')) return 'zh-TW';
-  if (nav.startsWith('ko'))                          return 'ko';
-  if (nav.startsWith('es'))                          return 'es';
-  if (nav.startsWith('fr'))                          return 'fr';
-  if (nav.startsWith('de'))                          return 'de';
+  if (nav.startsWith('ko'))                                return 'ko';
+  if (nav.startsWith('es'))                                return 'es';
+  if (nav.startsWith('fr'))                                return 'fr';
+  if (nav.startsWith('de'))                                return 'de';
   return 'en';
 }
 
@@ -66,11 +66,13 @@ function setLang(code) {
   customExclude.placeholder = t('customPlaceholder');
 }
 
-
 function escapeHtml(str) {
   return String(str)
-    .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
 }
 
 function getBasename(p) {
@@ -141,7 +143,6 @@ function treeDataToHtml(treeData) {
 </html>`;
 }
 
-
 function clearTree() { treeEl.replaceChildren(); }
 
 function renderChildren(children, parent) {
@@ -170,13 +171,12 @@ function renderTree(treeData) {
   const root    = document.createElement('details');
   root.open = true;
   const summary = document.createElement('summary');
-  summary.textContent = `${getBasename(treeData.name)}/`;  // フルパスを非表示
+  summary.textContent = `${getBasename(treeData.name)}/`;
   const ul = document.createElement('ul');
   renderChildren(treeData.children || [], ul);
   root.append(summary, ul);
   treeEl.appendChild(root);
 }
-
 
 function getOptions() {
   const checked = [...document.querySelectorAll('.excludeCheck:checked')].map(el => el.value);
@@ -187,14 +187,16 @@ function getOptions() {
   };
 }
 
-
 async function loadFolder(folderPath) {
+  const myId = ++loadRequestId;
   try {
     const { treeData, textTree } = await api.readFolder(folderPath, getOptions());
+    if (myId !== loadRequestId) return;
     renderTree(treeData);
-    currentTextTree  = textTree;
-    currentTreeData  = treeData;
+    currentTextTree = textTree;
+    currentTreeData = treeData;
   } catch (err) {
+    if (myId !== loadRequestId) return;
     showToast(err.message || String(err));
   }
 }
