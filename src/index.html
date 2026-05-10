@@ -62,15 +62,15 @@ button { padding: 5px 10px; cursor: pointer; }
 <body>
 
   <div id="toolbar">
-    <button id="selectBtn">フォルダを選択</button>
-    <button id="copyBtn">MDコピー</button>
-    <button id="saveBtn">保存</button>
+    <button type="button" id="selectBtn">フォルダを選択</button>
+    <button type="button" id="copyBtn">MDコピー</button>
+    <button type="button" id="saveBtn">保存</button>
     <select id="formatSelect" title="保存形式">
       <option value="txt">TXT</option>
       <option value="json">JSON</option>
       <option value="html">HTML</option>
     </select>
-    <button id="themeBtn">モード切替</button>
+    <button type="button" id="themeBtn">モード切替</button>
     <label for="langSelect">言語:</label>
     <select id="langSelect">
       <option value="auto">Auto</option>
@@ -95,14 +95,14 @@ button { padding: 5px 10px; cursor: pointer; }
 
     <span id="excludeLabel">除外:</span>
     <div id="excludeGroup">
-      <label><input type="checkbox" class="excludeCheck" value=".git"          checked> .git</label>
-      <label><input type="checkbox" class="excludeCheck" value="node_modules"  checked> node_modules</label>
-      <label><input type="checkbox" class="excludeCheck" value="dist">                  dist</label>
-      <label><input type="checkbox" class="excludeCheck" value=".next">                 .next</label>
-      <label><input type="checkbox" class="excludeCheck" value="__pycache__">           __pycache__</label>
-      <label><input type="checkbox" class="excludeCheck" value=".venv">                 .venv</label>
+      <label><input type="checkbox" class="excludeCheck" value=".git"         checked> .git</label>
+      <label><input type="checkbox" class="excludeCheck" value="node_modules" checked> node_modules</label>
+      <label><input type="checkbox" class="excludeCheck" value="dist">                 dist</label>
+      <label><input type="checkbox" class="excludeCheck" value=".next">                .next</label>
+      <label><input type="checkbox" class="excludeCheck" value="__pycache__">          __pycache__</label>
+      <label><input type="checkbox" class="excludeCheck" value=".venv">                .venv</label>
       <input type="text" id="customExclude" placeholder="カスタム除外（カンマ区切り）">
-      <button id="applyBtn">適用</button>
+      <button type="button" id="applyBtn">適用</button>
     </div>
 
   </div>
