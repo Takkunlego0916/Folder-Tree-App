@@ -1,6 +1,6 @@
 {
   "name": "folder-tree-app",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "description": "フォルダ構成図を簡単に作成するWindows用アプリ",
   "main": "main.js",
   "author": "Takkunlego0916",
