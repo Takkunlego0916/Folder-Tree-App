@@ -18,7 +18,7 @@
     "appId": "com.takkunlego0916.foldertree",
     "productName": "Folder Tree App",
     "asar": true,
-    "compression": "maximum",
+    "compression": "normal",
     "files": [
       "main.js",
       "preload.js",
@@ -32,7 +32,7 @@
       "output": "dist"
     },
     "win": {
-      "target": ["nsis"]
+      "target": ["nsis", "portable"]
     },
     "nsis": {
       "oneClick": false,

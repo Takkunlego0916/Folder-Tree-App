@@ -1,18 +1,38 @@
 const { app, BrowserWindow, dialog, ipcMain, clipboard, Menu } = require('electron');
 const path = require('path');
-const fs = require('fs/promises');
-const { Worker } = require('worker_threads');
 
 const MAX_DEPTH_LIMIT = 8;
 const MAX_CHILDREN_PER_DIR = 2000;
 const MAX_CONTENT_BYTES = 10 * 1024 * 1024;
 const MAX_CUSTOM_EXCLUDES = 50;
 const WORKER_PATH = path.join(__dirname, 'scanner-worker.js');
+let fs = null;
+let Worker = null;
 
 const trustedPaths = new Set();
 let mainWindow = null;
+const startupDebug = process.argv.includes('--startup-debug');
+const startupAt = Date.now();
+
+function startupLog(message) {
+  if (!startupDebug) return;
+  try {
+    const os = require('os');
+    const fsSync = require('fs');
+    const line = `[+${Date.now() - startupAt}ms] ${message}\n`;
+    fsSync.appendFileSync(path.join(os.tmpdir(), 'FolderTreeApp-startup.log'), line, 'utf8');
+  } catch {}
+}
+
+startupLog('main.js loaded');
+
+function lazyNodeModules() {
+  if (!fs) fs = require('fs/promises');
+  if (!Worker) ({ Worker } = require('worker_threads'));
+}
 
 function createWindow() {
+  startupLog('createWindow:start');
   mainWindow = new BrowserWindow({
     width: 1180,
     height: 780,
@@ -31,13 +51,19 @@ function createWindow() {
   });
 
   mainWindow.loadFile(path.join(__dirname, 'index.html'));
+  startupLog('loadFile:called');
+  mainWindow.webContents.once('did-finish-load', () => startupLog('renderer:did-finish-load'));
   mainWindow.webContents.setWindowOpenHandler(() => ({ action: 'deny' }));
   mainWindow.webContents.on('will-navigate', (event) => event.preventDefault());
   mainWindow.on('closed', () => { mainWindow = null; });
+  mainWindow.once('ready-to-show', () => startupLog('window:ready-to-show'));
 }
 
 Menu.setApplicationMenu(null);
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  startupLog('app.whenReady');
+  createWindow();
+});
 
 app.on('activate', () => {
   if (BrowserWindow.getAllWindows().length === 0) createWindow();
@@ -59,6 +85,7 @@ async function normalizeFolderPath(folderPath) {
   if (folderPath.includes('\0')) throw new Error('パスに不正な文字が含まれています');
   if (folderPath.length > 32767) throw new Error('パスが長すぎます');
 
+  lazyNodeModules();
   const resolved = path.resolve(folderPath);
   const stat = await fs.stat(resolved);
   if (!stat.isDirectory()) throw new Error('フォルダを指定してください');
@@ -86,6 +113,7 @@ function sanitizeOptions(options) {
 
 function runScanner(folderPath, options, event) {
   return new Promise((resolve, reject) => {
+    lazyNodeModules();
     const worker = new Worker(WORKER_PATH, {
       workerData: { folderPath, options }
     });
@@ -154,6 +182,7 @@ ipcMain.handle('read-folder', async (event, folderPath, options = {}) => {
 
 ipcMain.handle('save-file', async (event, content, format = 'txt') => {
   ensureTrustedSender(event);
+  lazyNodeModules();
   if (typeof content !== 'string') throw new Error('保存内容が不正です');
   if (Buffer.byteLength(content, 'utf8') > MAX_CONTENT_BYTES) throw new Error('コンテンツが大きすぎます');
 
