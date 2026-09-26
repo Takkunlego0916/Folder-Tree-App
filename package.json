@@ -1,36 +1,38 @@
 {
   "name": "folder-tree-app",
-  "version": "1.2.1",
-  "description": "フォルダ構成図を簡単に作成するWindows用アプリ",
+  "version": "1.3.0",
+  "description": "フォルダ構成図を高速・見やすく作成するWindows用アプリ",
   "main": "main.js",
   "author": "Takkunlego0916",
   "license": "MIT",
   "scripts": {
     "start": "electron .",
+    "dev": "electron .",
     "dist": "electron-builder"
   },
   "devDependencies": {
-    "electron": "^36.0.0",
-    "electron-builder": "^25.0.0"
+    "electron": "44.4.5",
+    "electron-builder": "26.16.1"
   },
   "build": {
     "appId": "com.takkunlego0916.foldertree",
     "productName": "Folder Tree App",
+    "asar": true,
+    "compression": "maximum",
     "files": [
       "main.js",
       "preload.js",
       "renderer.js",
+      "scanner-worker.js",
       "index.html",
+      "styles.css",
       "package.json"
     ],
     "directories": {
-      "output": "dist",
-      "buildResources": "assets",
-      "app": "."
+      "output": "dist"
     },
     "win": {
-      "target": ["nsis"],
-      "icon": "assets/icon.ico"
+      "target": ["nsis"]
     },
     "nsis": {
       "oneClick": false,

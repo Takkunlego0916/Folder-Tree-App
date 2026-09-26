@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'">
+<title>Folder Tree App</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body class="dark">
+<div class="app-shell">
+  <header class="topbar">
+    <div class="brand-block">
+      <div class="brand-icon">⌘</div>
+      <div>
+        <div class="brand-title">Folder Tree App</div>
+        <div class="brand-subtitle" id="brandSubtitle">フォルダ構成を見やすく整理</div>
+      </div>
+    </div>
+    <div class="top-actions">
+      <button class="icon-button" id="themeBtn" type="button" title="テーマ切替" aria-label="テーマ切替">◐</button>
+      <select id="langSelect" class="compact-select" aria-label="言語">
+        <option value="auto">Auto</option>
+        <option value="ja">日本語</option>
+        <option value="en">English</option>
+        <option value="zh-CN">简体中文</option>
+        <option value="zh-TW">繁體中文</option>
+        <option value="ko">한국어</option>
+        <option value="es">Español</option>
+        <option value="fr">Français</option>
+        <option value="de">Deutsch</option>
+      </select>
+    </div>
+  </header>
+
+  <main class="content">
+    <section class="hero-card">
+      <div class="hero-copy">
+        <span class="eyebrow" id="eyebrow">Folder Explorer</span>
+        <h1 id="heroTitle">フォルダ構成をすばやく可視化</h1>
+        <p id="heroDescription">フォルダを選択するだけで、階層構造を確認できます。大きなプロジェクトでも、必要な部分だけを開いて確認できます。</p>
+      </div>
+      <button class="primary-button" id="selectBtn" type="button">
+        <span class="button-symbol">＋</span>
+        <span>フォルダを選択</span>
+      </button>
+    </section>
+
+    <section class="control-card">
+      <div class="path-row">
+        <div class="path-info">
+          <span class="path-label" id="pathLabel">選択中のフォルダ</span>
+          <div class="path-value empty" id="pathValue">まだフォルダが選択されていません</div>
+        </div>
+        <div class="path-actions">
+          <button class="secondary-button" id="refreshBtn" type="button" disabled>↻ <span id="refreshText">更新</span></button>
+          <button class="secondary-button" id="copyBtn" type="button" disabled>⧉ <span id="copyText">Markdownをコピー</span></button>
+          <select id="formatSelect" class="format-select" aria-label="保存形式">
+            <option value="txt">TXT</option>
+            <option value="json">JSON</option>
+            <option value="html">HTML</option>
+          </select>
+          <button class="secondary-button" id="saveBtn" type="button" disabled>↓ <span id="saveText">保存</span></button>
+        </div>
+      </div>
+
+      <details class="settings" id="settingsPanel">
+        <summary><span id="settingsText">表示設定</span><span class="summary-arrow">⌄</span></summary>
+        <div class="settings-grid">
+          <div class="setting-block">
+            <div class="setting-heading">
+              <span id="depthLabel">表示階層</span>
+              <span class="value-pill" id="depthVal">4</span>
+            </div>
+            <input type="range" id="depthRange" min="1" max="8" value="4">
+            <div class="range-hints"><span>1</span><span>8</span></div>
+          </div>
+          <div class="setting-block wide">
+            <div class="setting-heading"><span id="excludeLabel">除外する項目</span></div>
+            <div class="exclude-grid">
+              <label><input type="checkbox" class="excludeCheck" value=".git" checked><span>.git</span></label>
+              <label><input type="checkbox" class="excludeCheck" value="node_modules" checked><span>node_modules</span></label>
+              <label><input type="checkbox" class="excludeCheck" value="dist"><span>dist</span></label>
+              <label><input type="checkbox" class="excludeCheck" value=".next"><span>.next</span></label>
+              <label><input type="checkbox" class="excludeCheck" value="__pycache__"><span>__pycache__</span></label>
+              <label><input type="checkbox" class="excludeCheck" value=".venv"><span>.venv</span></label>
+            </div>
+            <div class="custom-row">
+              <input type="text" id="customExclude" placeholder="カスタム除外（カンマ区切り）" spellcheck="false">
+              <button class="small-button" id="applyBtn" type="button">適用</button>
+            </div>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <section class="tree-card">
+      <div class="tree-header">
+        <div>
+          <div class="tree-title" id="treeTitle">フォルダ構成</div>
+          <div class="tree-subtitle" id="treeSubtitle">フォルダを選択するとここに表示されます</div>
+        </div>
+        <div class="tree-actions">
+          <button class="ghost-button" id="expandBtn" type="button" disabled>＋ <span id="expandText">すべて展開</span></button>
+          <button class="ghost-button" id="collapseBtn" type="button" disabled>− <span id="collapseText">すべて閉じる</span></button>
+        </div>
+      </div>
+      <div class="tree-toolbar">
+        <div class="search-wrap">
+          <span class="search-icon">⌕</span>
+          <input type="search" id="searchInput" placeholder="ファイル名・フォルダ名を検索" spellcheck="false">
+        </div>
+        <div class="tree-status" id="treeStatus">待機中</div>
+      </div>
+      <div class="tree-viewport" id="treeViewport">
+        <div class="empty-state" id="emptyState">
+          <div class="empty-icon">⌁</div>
+          <h2 id="emptyTitle">フォルダを選択してください</h2>
+          <p id="emptyDescription">ドラッグ＆ドロップでも選択できます</p>
+          <button class="secondary-button empty-action" id="emptySelectBtn" type="button">フォルダを選択</button>
+        </div>
+        <div id="tree" class="tree hidden"></div>
+        <div id="loadingState" class="loading-state hidden">
+          <div class="spinner"></div>
+          <div class="loading-title" id="loadingTitle">フォルダをスキャン中…</div>
+          <div class="loading-subtitle" id="loadingSubtitle">大きなフォルダでも画面を固めず処理しています</div>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+<div id="dropOverlay" class="drop-overlay hidden">
+  <div class="drop-card">
+    <div class="drop-icon">↳</div>
+    <div id="dropTitle">ここにフォルダをドロップ</div>
+  </div>
+</div>
+<div id="toast" class="toast" role="status" aria-live="polite"></div>
+<script src="renderer.js" defer></script>
+</body>
+</html>
